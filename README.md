@@ -1,6 +1,6 @@
 # lsdyna_for_intel_mpi
+To create dedicated submit scripts with Intel MPI platform for five specific .
 To create dedicated submit scripts with Intel MPI platform for five specific dyna versions.
-US-313060-To create dedicated submit scripts with Intel MPI platform for five specific dyna versions.
 Overview: - This script automates the process of running LS-DYNA simulations and compressing the output using femzip_dyna. It provides a menu to select the LS-DYNA version, validates user inputs, and logs the process. Dyna submits script for use specific Intel MPI for specific dyna versions.
 Current scenario: -
 •	Normally there is universal submission script for all dyna versions with Platform MPI by default.
