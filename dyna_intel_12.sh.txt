@@ -73,7 +73,7 @@ fi
         echo "Error: Invalid number of CPUs: $num_cpus. Please enter a positive integer."
         exit 1
     fi
-    export LSTC_LICENSE_SERVER=10.131.245.104
+    export LSTC_LICENSE_SERVER=127.0.0.1
 
     # Run the LS-DYNA simulation with the specified command
     nohup /soft/mpi/intel/impi/2018.4.274/intel64/bin/mpirun -np "$num_cpus" "$exe_path" i="$file_path" memory=99999999 >> "$log_file" 2>&1 &
@@ -88,7 +88,7 @@ fi
     if [ $status -eq 0 ]; then
         echo "LS-DYNA command completed successfully for file $file_path." | tee -a "$log_file"
    # Set the SIDACT_LICENSE_FILE environment variable
-   SIDACT_LICENSE_FILE="27000@a700s600"
+   SIDACT_LICENSE_FILE="27000@127.0.0.1"
    export SIDACT_LICENSE_FILE
 
    # Set the LD_LIBRARY_PATH environment variable
