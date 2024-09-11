@@ -1,0 +1,109 @@
+#!/bin/bash
+
+# Function to validate if a string is a positive integer
+is_positive_integer() {
+    local value="$1"
+    if [[ "$value" =~ ^[0-9]+$ ]] && [ "$value" -gt 0 ]; then
+        return 0  # Valid positive integer
+    else
+        return 1  # Not a valid positive integer
+    fi
+}
+
+# Function to process the file and run the LS-DYNA simulation
+process_file() {
+    clear
+     # Generate a timestamp for the log file name
+    local timestamp=$(date +"%Y-%m-%d_%H-%M-%S")
+    local log_file="ls-dyna_run_$timestamp.log"
+
+    echo -e "\nPossible values are: LS-DYNA version \n\n 1. R12.4510_0-dmp-sngl/sngl/lsdyna
+\t- mppdyna single precision build R12.4510_0 using Intel MPI\n\n 2. R12.4510.0-dmp-dble/dble/lsdyna
+\t- mppdyna double precision build R12.4510_0 using Intel MPI\n\n 3. R12.2.206-dmp-sngl/sngl/lsdyna
+\t- mppdyna single precision build R12.2.206 using Intel MPI\n\n 4. R12.2.206-dmp-dble/dble/lsdyna
+\t- mppdyna double precision build R12.2.206 using Intel MPI\n\n 5. R12.4544-dmp-sngl/sngl/lsdyna
+\t- mppdyna single precision build R12.4544 using Intel MPI\n\n Please select the number:- "
+    read option
+    if [[ $option == 1 ]] ; then
+        exe_path="/soft/lsdyna/R12.4510_0/dmp/sngl/sngl/ls-dyna_mpp_s_R12_4510_6d76f4b5b4_x64_CentOS54_ifort160_avx2_impi2018_sharelib"
+        echo -e "\n$exe_path"
+    elif [[ $option == 2 ]] ; then
+        exe_path="/soft/lsdyna/R12.4510_0/dmp/dble/dble/ls-dyna_mpp_d_R12_4510_6d76f4b5b4_x64_CentOS54_ifort160_avx2_impi2018_sharelib"
+        echo -e "\n$exe_path"
+    elif [[ $option == 3 ]] ; then
+        exe_path="/soft/lsdyna/R12.2.206/dmp/sngl/sngl/ls-dyna_mpp_s_R12.2_206_9b5d4c142a_x64_CentOS54_ifort160_sse2_impi2018_sharelib"
+        echo -e "\n$exe_path"
+    elif [[ $option == 4 ]] ; then
+        exe_path="/soft/lsdyna/R12.2.206/dmp/dble/dble/ls-dyna_mpp_d_R12.2_206_9b5d4c142a_x64_CentOS54_ifort160_sse2_impi2018_sharelib"
+        echo -e "\n$exe_path"
+    elif [[ $option == 5 ]] ; then
+        exe_path="/soft/lsdyna/R12.4544/dmp/sngl/sngl/ls-dyna_mpp_s_R12_4544_6c0c75959e_x64_CentOS54_ifort160_sse2_impi2018_sharelib"
+        echo -e "\n$exe_path"
+fi
+
+# Check if the executable file exists
+if [ ! -f "$exe_path" ]; then
+    echo "Error: Executable not found: $exe_path" | tee -a "$log_file"
+    exit 1
+fi
+
+
+
+    #echo -e "Available files:- $(ls -rt)\n"
+    # Ask the user for the file path
+
+    # List available .dyn files in the current directory
+    echo -e "Available .dyn files in the current directory:- \n" | tee -a "$log_file"
+    find . -maxdepth 1 -type f -name "*.dyn" -exec echo {} \; | tee -a "$log_file"
+    echo -e  "Please enter the path to the LS-DYNA input file:- \n" | tee -a "$log_file"
+    read file_path
+
+    # Check if the file exists
+    if [ ! -f "$file_path" ]; then
+        echo "Error: File not found: $file_path" | tee -a "$log_file"
+        exit 1
+    fi
+
+    # Ask the user for the number of CPUs
+    echo -e "Please enter the number of CPUs to use (positive integer):- \n" | tee -a "$log_file"
+    read num_cpus
+
+    # Validate the number of CPUs
+    if ! is_positive_integer "$num_cpus"; then
+        echo "Error: Invalid number of CPUs: $num_cpus. Please enter a positive integer."
+        exit 1
+    fi
+    export LSTC_LICENSE_SERVER=10.131.245.104
+
+    # Run the LS-DYNA simulation with the specified command
+    nohup /soft/mpi/intel/impi/2018.4.274/intel64/bin/mpirun -np "$num_cpus" "$exe_path" i="$file_path" memory=99999999 >> "$log_file" 2>&1 &
+    exit
+
+# Capture the PID of the background process
+    local pid=$!
+    wait $pid
+    local status=$?
+
+# After the LS-DYNA simulation completes successfully
+    if [ $status -eq 0 ]; then
+        echo "LS-DYNA command completed successfully for file $file_path." | tee -a "$log_file"
+   # Set the SIDACT_LICENSE_FILE environment variable
+   SIDACT_LICENSE_FILE="27000@a700s600"
+   export SIDACT_LICENSE_FILE
+
+   # Set the LD_LIBRARY_PATH environment variable
+   LD_LIBRARY_PATH="$CDTNG_FEMZIP_L_HOME/lib"
+   export LD_LIBRARY_PATH
+
+    # Add the femzip_dyna command here and redirect output to log file
+    femzip_dyna -I d3plot -O d3plot.fz -X -C /share/cae/cfg/femzip/fempar_L_s3_mm-kg-ms -D >> "$log_file" 2>&1
+    echo -e "\nCompression with femzip_dyna completed." | tee -a "$log_file"
+
+    else
+        echo -e "\nCompression with femzip_dyna completed."
+    fi
+
+}
+
+# Call the function to process the file and run the LS-DYNA simulation
+process_file
